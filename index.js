@@ -10,11 +10,12 @@ const SSLCommerzPayment = require('sslcommerz-lts')
 
 const port = process.env.PORT;
 
-app.use(cors({
-  origin: ['http://localhost:5173'],
-  credentials: true
-}
-));
+// app.use(cors({
+//   origin: ['http://localhost:5173'],
+//   credentials: true
+// }
+// ));
+app.use(cors());
 app.use(express.json());
 
 function createToken(user) {
@@ -63,21 +64,26 @@ async function run() {
     const orderDB = client.db("orderDB");
     const orderCollection = orderDB.collection("orderCollection");
 
-    app.post ('/jwt', async (req, res)=>{
-      const user= req.body;
-      console.log(user)
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'})
-      res
-      .cookie('token', token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'none'
-      })
-      .send({success: true})
-    }
-    )
+    // app.post ('/jwt', async (req, res)=>{
+    //   const user= req.body;
+    //   console.log(user)
+    //   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'})
+    //   res
+    //   .cookie('token', token, {
+    //     httpOnly: true,
+    //     secure: false,
+    //     sameSite: 'none'
+    //   })
+    //   .send({success: true})
+    // }
+    // )
 
-    app.post('/courses', verifyToken, async (req, res) => {
+  //   app.post('/courses', verifyToken, async (req, res) => {
+  //       const balls=  req.body;
+  //       const result = await ballcollection.insertOne(balls);
+  //       res.send(result);
+  // });
+    app.post('/courses',  async (req, res) => {
         const balls=  req.body;
         const result = await ballcollection.insertOne(balls);
         res.send(result);
@@ -194,7 +200,17 @@ app.post('/payment/fail/:tranId',async (req, res) => {
      res.send(ballData);
   });
   
-  app.patch('/courses/:id',verifyToken, async (req, res) => {
+  // app.patch('/courses/:id',verifyToken, async (req, res) => {
+  //   const id= req.params.id
+  //   const updatedData= req.body;
+  //    const result = await ballcollection.updateOne(
+  //       { _id: new ObjectId(id)},
+  //       {$set: updatedData}
+  //   );
+  //    res.send( result);
+  // });
+
+  app.patch('/courses/:id', async (req, res) => {
     const id= req.params.id
     const updatedData= req.body;
      const result = await ballcollection.updateOne(
@@ -204,7 +220,15 @@ app.post('/payment/fail/:tranId',async (req, res) => {
      res.send( result);
   });
 
-  app.delete('/courses/:id', verifyToken, async (req, res) => {
+  // app.delete('/courses/:id', verifyToken, async (req, res) => {
+  //   const id= req.params.id
+  //   // const updatedData= req.body;
+  //    const result = await ballcollection.deleteOne(
+  //       { _id: new ObjectId(id)}
+  //   );
+  //    res.send( result);
+  // });
+  app.delete('/courses/:id', async (req, res) => {
     const id= req.params.id
     // const updatedData= req.body;
      const result = await ballcollection.deleteOne(
