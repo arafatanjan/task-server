@@ -148,10 +148,10 @@ async function run() {
         console.log('Redirecting to: ', GatewayPageURL)
     });
 
-app.post('/payment/success/:tranId',async (req, res) => {
-console.log(req.params.tranId)
+app.post('/payment/success/:tran_id',async (req, res) => {
+console.log(req.params.tran_id)
 
-const result =await orderCollection.updateOne({transactionId: req.params.tranId },
+const result =await orderCollection.updateOne({transactionId: req.params.tran_id },
   {
     $set:{
       paidStatus: true
@@ -165,18 +165,18 @@ const item = await ballcollection.findOne({ _id: new ObjectId(id)});
       return res.status(404).send({ error: 'Item not found' });
     }
 
-    const newStock = item.stock - 1;
+    //const newStock = item.stock - 1;
 
 
     // Update the stock value
-    const result1 = await ballcollection.updateOne(
-      { _id: new ObjectId(id)},
-      {
-        $set: {
-          stock: newStock,
-        },
-      }
-    );
+    // const result1 = await ballcollection.updateOne(
+    //   { _id: new ObjectId(id)},
+    //   {
+    //     $set: {
+    //       stock: newStock,
+    //     },
+    //   }
+    // );
 
 if (result.modifiedCount> 0){
   res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`)
