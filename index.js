@@ -148,10 +148,10 @@ async function run() {
         console.log('Redirecting to: ', GatewayPageURL)
     });
 
-app.post('/payment/success/:tran_id',async (req, res) => {
-console.log(req.params.tran_id)
+app.post('/payment/success/:tranId',async (req, res) => {
+console.log(req.params.tranId)
 
-const result =await orderCollection.updateOne({transactionId: req.params.tran_id },
+const result =await orderCollection.updateOne({transactionId: req.params.tranId },
   {
     $set:{
       paidStatus: true
