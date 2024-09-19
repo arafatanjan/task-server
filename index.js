@@ -18,6 +18,8 @@ const port = process.env.PORT;
 app.use(cors());
 app.use(express.json());
 
+
+
 function createToken(user) {
   const token = jwt.sign(
     {
@@ -94,10 +96,11 @@ async function run() {
 
     app.post('/order/:id',async (req, res) => {
       const id= req.params.id
-     const product = await ballcollection.findOne({ _id: new ObjectId(id)});
-     
+    //  const product = await ballcollection.findOne({ _id: new ObjectId(id)});
+    //  console.log(product)
       const data = {
-        total_amount: product.price*req.body.quantity,
+        // total_amount: product.price*req.body.quantity,
+        total_amount: req.body.price,
         currency: 'BDT',
         tran_id: tran_id, 
         success_url: `http://localhost:5000/payment/success/${tran_id}`,
@@ -134,7 +137,7 @@ async function run() {
         res.send({ url : GatewayPageURL});
 
         const finalOrder= {
-          product,
+          // product,
           paidStatus: false,
           transactionId: tran_id,
           customer: req.body.name
@@ -163,6 +166,7 @@ const item = await ballcollection.findOne({ _id: new ObjectId(id)});
     }
 
     const newStock = item.stock - 1;
+
 
     // Update the stock value
     const result1 = await ballcollection.updateOne(
