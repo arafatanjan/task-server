@@ -103,7 +103,7 @@ async function run() {
         total_amount: req.body.price,
         currency: 'BDT',
         tran_id: tran_id, 
-        success_url: `https://task-server-fawn.vercel.app/payment/success/${tran_id}`,
+        success_url: `http://localhost:5000/payment/success/${tran_id}`,
         fail_url: `http://localhost:5000/payment/fail/${tran_id}`,
         cancel_url: 'http://localhost:3030/cancel',
         ipn_url: 'http://localhost:3030/ipn',
