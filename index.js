@@ -92,105 +92,191 @@ async function run() {
   });
 
   //payment
-  const tran_id= new ObjectId().toString()
+  //const tran_id= new ObjectId().toString()
 
-    app.post('/order/:id',async (req, res) => {
-      const id= req.params.id
-    //  const product = await ballcollection.findOne({ _id: new ObjectId(id)});
-    //  console.log(product)
-      const data = {
-        // total_amount: product.price*req.body.quantity,
+  app.post('/order/:id', async (req, res) => {
+    const id = req.params.id;
+    const tran_id = `TRANSACTION_${Date.now()}`;  // Generate unique transaction ID
+    const data = {
         total_amount: req.body.price,
         currency: 'BDT',
-        tran_id: tran_id, 
+        tran_id: tran_id,
         success_url: `http://localhost:5000/payment/success/${tran_id}`,
         fail_url: `http://localhost:5000/payment/fail/${tran_id}`,
         cancel_url: 'http://localhost:3030/cancel',
         ipn_url: 'http://localhost:3030/ipn',
         shipping_method: 'Courier',
-        product_name: 'Computer.',
+        product_name: 'Computer',
         product_category: 'Electronic',
         product_profile: 'general',
         cus_name: req.body.name,
         cus_email: 'customer@example.com',
         cus_add1: req.body.address,
-        cus_add2: 'Dhaka',
         cus_city: 'Dhaka',
-        cus_state: 'Dhaka',
-        cus_postcode: '1000',
         cus_country: 'Bangladesh',
         cus_phone: req.body.contact,
-        cus_fax: '01711111111',
         ship_name: 'Customer Name',
-        ship_add1: 'Dhaka',
-        ship_add2: 'Dhaka',
         ship_city: 'Dhaka',
-        ship_state: 'Dhaka',
-        ship_postcode: 1000,
         ship_country: 'Bangladesh',
     };
-   
-    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
-    sslcz.init(data).then(apiResponse => {
+
+    console.log(data);
+
+    try {
+        const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+        const apiResponse = await sslcz.init(data);
+        const GatewayPageURL = apiResponse.GatewayPageURL;
+
+        const finalOrder = {
+            paidStatus: false,
+            transactionId: tran_id,
+            customer: req.body.name
+        };
+        await orderCollection.insertOne(finalOrder);
+
+        console.log('Redirecting to: ', GatewayPageURL);
+        res.redirect(GatewayPageURL);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// Payment Success Route
+app.post('/payment/success/:tranId', async (req, res) => {
+    try {
+        const result = await orderCollection.updateOne(
+            { transactionId: req.params.tranId },
+            { $set: { paidStatus: true } }
+        );
+
         
-        let GatewayPageURL = apiResponse.GatewayPageURL
-        res.send({ url : GatewayPageURL});
+            res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`);
+       
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
-        const finalOrder= {
-          // product,
-          paidStatus: false,
-          transactionId: tran_id,
-          customer: req.body.name
-          
+// Payment Failure Route
+app.post('/payment/fail/:tranId', async (req, res) => {
+    try {
+        const result = await orderCollection.deleteOne({ transactionId: req.params.tranId });
+
+        if (result.deletedCount > 0) {
+            res.redirect(`http://localhost:5173/payment/fail/${req.params.tranId}`);
+        } else {
+            res.status(404).send('Order not found');
         }
-        const result = orderCollection.insertOne(finalOrder)
-        console.log(result);
-        console.log('Redirecting to: ', GatewayPageURL)
-    });
-
-app.post('/payment/success/:tranId',async (req, res) => {
-console.log(req.params.tranId)
-
-const result =await orderCollection.updateOne({transactionId: req.params.tranId },
-  {
-    $set:{
-      paidStatus: true
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
     }
-    }
-)
+});
 
-const item = await ballcollection.findOne({ _id: new ObjectId(id)});
+// app.post('/order/:id',async (req, res) => {
+//   const id= req.params.id
+// //  const product = await ballcollection.findOne({ _id: new ObjectId(id)});
+//   console.log(id)
+//   const data = {
+//     // total_amount: product.price*req.body.quantity,
+//     total_amount: req.body.price,
+//     currency: 'BDT',
+//     tran_id: tran_id, 
+//     success_url: http://localhost:5000/payment/success/${tran_id},
+//     fail_url: http://localhost:5000/payment/fail/${tran_id},
+//     cancel_url: 'http://localhost:3030/cancel',
+//     ipn_url: 'http://localhost:3030/ipn',
+//     shipping_method: 'Courier',
+//     product_name: 'Computer.',
+//     product_category: 'Electronic',
+//     product_profile: 'general',
+//     cus_name: req.body.name,
+//     cus_email: 'customer@example.com',
+//     cus_add1: req.body.address,
+//     cus_add2: 'Dhaka',
+//     cus_city: 'Dhaka',
+//     cus_state: 'Dhaka',
+//     cus_postcode: '1000',
+//     cus_country: 'Bangladesh',
+//     cus_phone: req.body.contact,
+//     cus_fax: '01711111111',
+//     ship_name: 'Customer Name',
+//     ship_add1: 'Dhaka',
+//     ship_add2: 'Dhaka',
+//     ship_city: 'Dhaka',
+//     ship_state: 'Dhaka',
+//     ship_postcode: 10000,
+//     ship_country: 'Bangladesh',
+// };
 
-    if (!item) {
-      return res.status(404).send({ error: 'Item not found' });
-    }
+// console.log(data);
 
-    //const newStock = item.stock - 1;
+// const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+// sslcz.init(data).then(apiResponse => {
+    
+//     let GatewayPageURL = apiResponse.GatewayPageURL
+//     //res.send({ url : GatewayPageURL});
+//     res.redirect({ url : GatewayPageURL});
+
+//     const finalOrder= {
+//       // product,
+//       paidStatus: false,
+//       transactionId: tran_id,
+//       customer: req.body.name
+      
+//     }
+//     const result = orderCollection.insertOne(finalOrder)
+//     console.log(result);
+//     console.log('Redirecting to: ', GatewayPageURL)
+// });
+
+// app.post('/payment/success/:tranId',async (req, res) => {
+// console.log(req.params.tranId)
+
+// const result =await orderCollection.updateOne({transactionId: req.params.tranId },
+// {
+// $set:{
+//   paidStatus: true
+// }
+// }
+// )
+
+// const item = await ballcollection.findOne({ _id: new ObjectId(id)});
+
+// if (!item) {
+//   return res.status(404).send({ error: 'Item not found' });
+// }
+
+// //const newStock = item.stock - 1;
 
 
-    // Update the stock value
-    // const result1 = await ballcollection.updateOne(
-    //   { _id: new ObjectId(id)},
-    //   {
-    //     $set: {
-    //       stock: newStock,
-    //     },
-    //   }
-    // );
+// // Update the stock value
+// // const result1 = await ballcollection.updateOne(
+// //   { _id: new ObjectId(id)},
+// //   {
+// //     $set: {
+// //       stock: newStock,
+// //     },
+// //   }
+// // );
 
-if (result.modifiedCount> 0){
-  res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`)
-}
-})
+// if (result.modifiedCount> 0){
+// res.redirect(http://localhost:5173/payment/success/${req.params.tranId})
+// }
+// })
 
-app.post('/payment/fail/:tranId',async (req, res) => {
-  const result =await orderCollection.deleteOne({transactionId: req.params.tranId })
+// app.post('/payment/fail/:tranId',async (req, res) => {
+// const result =await orderCollection.deleteOne({transactionId: req.params.tranId })
 
-  if (result.deletedCount){
-    res.redirect(`http://localhost:5173/payment/fail/${req.params.tranId}`)
-  }
-})
-  });
+// if (result.deletedCount){
+// res.redirect(http://localhost:5173/payment/fail/${req.params.tranId})
+// }
+// })
+// });
+
+
 
   app.get('/courses', async (req, res) => {
     const balls=  ballcollection.find();
