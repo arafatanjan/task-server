@@ -96,7 +96,9 @@ async function run() {
 
   app.post('/order/:id', async (req, res) => {
     const id = req.params.id;
-    const tran_id = `TRANSACTION_${Date.now()}`;  // Generate unique transaction ID
+    const tran_id= new ObjectId().toString()
+    
+  
     const data = {
         total_amount: req.body.price,
         currency: 'BDT',
@@ -134,7 +136,7 @@ async function run() {
         };
         await orderCollection.insertOne(finalOrder);
 
-        console.log('Redirecting to: ', GatewayPageURL);
+        // console.log(GatewayPageURL);
         res.redirect(GatewayPageURL);
     } catch (error) {
         console.error(error);
@@ -148,10 +150,8 @@ app.post('/payment/success/:tranId', async (req, res) => {
         const result = await orderCollection.updateOne(
             { transactionId: req.params.tranId },
             { $set: { paidStatus: true } }
-        );
-
-        
-            res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`);
+        );     
+        res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`);
        
     } catch (error) {
         console.error(error);
