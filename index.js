@@ -5,6 +5,9 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const jwt = require('jsonwebtoken');
 
+app.use(cors());
+app.use(express.json());
+
 const SSLCommerzPayment = require('sslcommerz-lts')
 
 
@@ -15,8 +18,7 @@ const port = process.env.PORT;
 //   credentials: true
 // }
 // ));
-app.use(cors());
-app.use(express.json());
+
 
 
 
