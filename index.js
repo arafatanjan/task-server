@@ -92,93 +92,104 @@ async function run() {
   });
 
   //payment
-  //const tran_id= new ObjectId().toString()
+  const tran_id= new ObjectId().toString()
 
-  app.post('/order/:id', async (req, res) => {
-    const id = req.params.id;
-    const tran_id= new ObjectId().toString()
-    
-  
-    const data = {
+// Order Creation Route
+app.post('/order/:id', async (req, res) => {
+  const id = req.params.id;
+   
+  const data = {
+        // total_amount: product.price*req.body.quantity,
         total_amount: req.body.price,
         currency: 'BDT',
-        tran_id: tran_id,
+        tran_id: tran_id, 
         success_url: `http://localhost:5000/payment/success/${tran_id}`,
         fail_url: `http://localhost:5000/payment/fail/${tran_id}`,
         cancel_url: 'http://localhost:3030/cancel',
         ipn_url: 'http://localhost:3030/ipn',
         shipping_method: 'Courier',
-        product_name: 'Computer',
+        product_name: 'Computer.',
         product_category: 'Electronic',
         product_profile: 'general',
         cus_name: req.body.name,
         cus_email: 'customer@example.com',
         cus_add1: req.body.address,
+        cus_add2: 'Dhaka',
         cus_city: 'Dhaka',
+        cus_state: 'Dhaka',
+        cus_postcode: '1000',
         cus_country: 'Bangladesh',
         cus_phone: req.body.contact,
+        cus_fax: '01711111111',
         ship_name: 'Customer Name',
+        ship_add1: 'Dhaka',
+        ship_add2: 'Dhaka',
         ship_city: 'Dhaka',
+        ship_state: 'Dhaka',
+        ship_postcode: 10000,
         ship_country: 'Bangladesh',
     };
 
-    console.log(data);
+  // console.log(data);
 
-    try {
-        const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
-        sslcz.init(data).then(apiResponse => {
-        
-          let GatewayPageURL = apiResponse.GatewayPageURL
-          //res.send({ url : GatewayPageURL});
-          res.redirect({ url : GatewayPageURL});
-  
-          const finalOrder= {
-            // product,
-            paidStatus: false,
-            transactionId: tran_id,
-            customer: req.body.name
-            
-          }
-          const result = orderCollection.insertOne(finalOrder)
-          console.log(result);
-          console.log('Redirecting to: ', GatewayPageURL)
-      });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Internal Server Error');
-    }
+  try {
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+      console.log('sslcz', sslcz);
+      const apiResponse = await sslcz.init(data);
+      console.log('apiResponse', apiResponse);
+      const GatewayPageURL = apiResponse.GatewayPageURL;
+
+      const finalOrder = {
+          paidStatus: false,
+          transactionId: tran_id,
+          customer: req.body.name
+      };
+      await orderCollection.insertOne(finalOrder);
+
+      console.log('Redirecting to: ', GatewayPageURL);
+      res.redirect(GatewayPageURL);
+  } 
+  catch (error) {
+      console.error(error);
+      res.status(500).send('Internal Server Error');
+  }
 });
 
 // Payment Success Route
 app.post('/payment/success/:tranId', async (req, res) => {
-    try {
-        const result = await orderCollection.updateOne(
-            { transactionId: req.params.tranId },
-            { $set: { paidStatus: true } }
-        );     
-        res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`);
-       
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Internal Server Error');
-    }
+  try {
+      const result = await orderCollection.updateOne(
+          { transactionId: req.params.tranId },
+          { $set: { paidStatus: true } }
+      );
+
+      if (result.modifiedCount > 0) {
+          res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`);
+      } else {
+          res.status(404).send('Order not found');
+      }
+  } catch (error) {
+      console.error(error);
+      res.status(500).send('Internal Server Error');
+  }
 });
 
 // Payment Failure Route
 app.post('/payment/fail/:tranId', async (req, res) => {
-    try {
-        const result = await orderCollection.deleteOne({ transactionId: req.params.tranId });
+  try {
+      const result = await orderCollection.deleteOne({ transactionId: req.params.tranId });
 
-        if (result.deletedCount > 0) {
-            res.redirect(`http://localhost:5173/payment/fail/${req.params.tranId}`);
-        } else {
-            res.status(404).send('Order not found');
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Internal Server Error');
-    }
+      if (result.deletedCount > 0) {
+          res.redirect(`http://localhost:5173/payment/fail/${req.params.tranId}`);
+      } else {
+          res.status(404).send('Order not found');
+      }
+  } catch (error) {
+      console.error(error);
+      res.status(500).send('Internal Server Error');
+  }
 });
+
 
 // app.post('/order/:id',async (req, res) => {
 //   const id= req.params.id
