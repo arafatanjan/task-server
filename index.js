@@ -126,18 +126,23 @@ async function run() {
 
     try {
         const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
-        const apiResponse = await sslcz.init(data);
-        const GatewayPageURL = apiResponse.GatewayPageURL;
-
-        const finalOrder = {
+        sslcz.init(data).then(apiResponse => {
+        
+          let GatewayPageURL = apiResponse.GatewayPageURL
+          //res.send({ url : GatewayPageURL});
+          res.redirect({ url : GatewayPageURL});
+  
+          const finalOrder= {
+            // product,
             paidStatus: false,
             transactionId: tran_id,
             customer: req.body.name
-        };
-        await orderCollection.insertOne(finalOrder);
-
-        // console.log(GatewayPageURL);
-        res.redirect(GatewayPageURL);
+            
+          }
+          const result = orderCollection.insertOne(finalOrder)
+          console.log(result);
+          console.log('Redirecting to: ', GatewayPageURL)
+      });
     } catch (error) {
         console.error(error);
         res.status(500).send('Internal Server Error');
